@@ -18,6 +18,8 @@ using System.Globalization;
 using Npgsql;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace _Imported_Extensions_
 {
@@ -33,14 +35,15 @@ namespace _Imported_Extensions_
         {
             return Enumerable.ToList(te);
         }
-    }
+        
 }
 
 namespace EFApplication
 {
     
-    internal class Program
+    internal class Program(IConfiguration config)
     {
+        
         public static string strDateString = "";
         static void Main(string[] args)
         {
@@ -61,7 +64,7 @@ namespace EFApplication
             {
                 int iteration = tCtr;
                 Task t = Task.Run(() => {
-                    for (int i = 1; i < 5000; i++)
+                    for (int i = 1; i < 5; i++)
                     {
                         lock (lockObj)
                         {
@@ -91,25 +94,50 @@ namespace EFApplication
         }
         public static void doStuff(string strName, int j)
         {
+                //Adding data to the table "accounts"
+                using (var dbContext = new AppDbContext())
+                {
+                    // Add a new account
+                    dbContext.accounts.Add(new Account { Id = j, AccountNumber = "1111111" + j, Balance = 2*j++ });
 
-            using (var dbContext = new AppDbContext())
+                    dbContext.SaveChanges();
+
+                    // Query all accounts
+                    var account = dbContext.accounts.ToList();
+
+
+                }
+                using (var dbContext = new AppDbContext())
             {
-                // Add a new person
-                dbContext.people.Add(new Person { id = j, firstname = "John", lastname = "Doe" });
-               
-                dbContext.SaveChanges();
+                // Replace with the actual account IDs and amount
+                int fromAccountId = j;
+                int toAccountId = j++;
+                decimal transferAmount = j;
 
-                // Query all people
-                var people = dbContext.people.ToList();
+                using (var transaction = dbContext.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        // Execute the stored procedure
+                        dbContext.Database.ExecuteSqlAsync($"call testdbthread.public.transfer({j},{fromAccountId},{transferAmount},{j*2});");
 
-                
+                        // Commit the transaction if everything is successful
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback the transaction in case of an exception
+                        //transaction.Rollback();
+                        Console.WriteLine($"Error: {ex.Message}");
+                    }
+                }
             }
 
-            
 
 
 
 
+            }
         }
     }
 }
