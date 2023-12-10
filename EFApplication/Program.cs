@@ -1,25 +1,11 @@
 ﻿using Task = System.Threading.Tasks.Task;
-using Thread = System.Threading.Thread;
-using Barrier = System.Threading.Barrier;
-using Monitor = System.Threading.Monitor;
-using IDisposable = System.IDisposable;
 using TaskEnum = System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task>;
-using TaskQueue = System.Collections.Generic.Queue<System.Threading.Tasks.Task>;
 using Enumerable = System.Linq.Enumerable;
-using ObjectDisposedException = System.ObjectDisposedException;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 using _Imported_Extensions_;
-using System.Data;
-using System.Globalization;
-using Npgsql;
-using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+
 
 namespace _Imported_Extensions_
 {
@@ -45,7 +31,8 @@ namespace EFApplication
     {
         
         public static string strDateString = "";
-        static void Main(string[] args)
+            public static string result = "";
+            static void Main(string[] args)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -114,29 +101,11 @@ namespace EFApplication
                 int toAccountId = j++;
                 decimal transferAmount = j;
 
-                using (var transaction = dbContext.Database.BeginTransaction())
-                {
-                    try
-                    {
-                        // Execute the stored procedure
-                        dbContext.Database.ExecuteSqlAsync($"call testdbthread.public.transfer({j},{fromAccountId},{transferAmount},{j*2});");
-
-                        // Commit the transaction if everything is successful
-                        transaction.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Rollback the transaction in case of an exception
-                        //transaction.Rollback();
-                        Console.WriteLine($"Error: {ex.Message}");
-                    }
+                    
+                    var sql = $"call testdbthread.public.transfer({j},{fromAccountId},{transferAmount},{j * 2});"; //"call proc2(" + j + ")";
+                                     
+                    var rowsAffected = dbContext.Database.ExecuteSqlRaw(sql);                              
                 }
-            }
-
-
-
-
-
             }
         }
     }
