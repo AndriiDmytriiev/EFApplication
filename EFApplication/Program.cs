@@ -21,71 +21,72 @@ namespace _Imported_Extensions_
         {
             return Enumerable.ToList(te);
         }
-        
-}
 
-namespace EFApplication
-{
-    
-    internal class Program(IConfiguration config)
+    }
+
+    namespace EFApplication
     {
-        
-        public static string strDateString = "";
+
+        internal class Program(IConfiguration config)
+        {
+
+            public static string strDateString = "";
             public static string result = "";
             static void Main(string[] args)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            // Create a scheduler that uses two threads. 
-
-            List<Task> tasks = new List<Task>();
-
-            // Create a TaskFactory and pass it our custom scheduler. 
-
-
-            // Use our factory to run a set of tasks. 
-            Object lockObj = new Object();
-            int outputItem = 0;
-
-            for (int tCtr = 0; tCtr <= 1; tCtr++)
             {
-                int iteration = tCtr;
-                Task t = Task.Run(() => {
-                    for (int i = 1; i < 5; i++)
-                    {
-                        lock (lockObj)
+                Stopwatch sw = Stopwatch.StartNew();
+
+                // Create a scheduler that uses two threads. 
+
+                List<Task> tasks = new List<Task>();
+
+                // Create a TaskFactory and pass it our custom scheduler. 
+
+
+                // Use our factory to run a set of tasks. 
+                Object lockObj = new Object();
+                int outputItem = 0;
+
+                for (int tCtr = 0; tCtr <= 1; tCtr++)
+                {
+                    int iteration = tCtr;
+                    Task t = Task.Run(() => {
+                        for (int i = 1; i < 5; i++)
                         {
-                            doStuff("Task" + i.ToString(), i);
+                            lock (lockObj)
+                            {
+                                doStuff("Task" + i.ToString(), i);
 
-                            outputItem++;
+                                outputItem++;
 
+                            }
                         }
-                    }
-                });
+                    });
 
 
 
-                tasks.Add(t);
+                    tasks.Add(t);
+                }
+
+
+                ExecuteJob(tasks.ToArray());
+
+                Console.WriteLine("Work of programm within: {0:f2} s", sw.Elapsed.TotalSeconds);
+                Console.ReadKey();
             }
+            private static async void ExecuteJob(Task[] test)
+            {
 
-
-            ExecuteJob(tasks.ToArray());
-
-            Console.WriteLine("Work of programm within: {0:f2} s", sw.Elapsed.TotalSeconds);
-            Console.ReadKey();
-        }
-        private static async void ExecuteJob(Task[] test)
-        {
-
-            await Task.WhenAll(test).ConfigureAwait(false);
-        }
-        public static void doStuff(string strName, int j)
-        {
+                await Task.WhenAll(test).ConfigureAwait(false);
+            }
+            public static void doStuff(string strName, int j)
+            {
+                try { 
                 //Adding data to the table "accounts"
                 using (var dbContext = new AppDbContext())
                 {
                     // Add a new account
-                    dbContext.accounts.Add(new Account { Id = j, AccountNumber = "1111111" + j, Balance = 2*j++ });
+                    dbContext.accounts.Add(new Account { Id = j, AccountNumber = "1111111" + j, Balance = 2 * j++ });
 
                     dbContext.SaveChanges();
 
@@ -95,16 +96,22 @@ namespace EFApplication
 
                 }
                 using (var dbContext = new AppDbContext())
-            {
-                // Replace with the actual account IDs and amount
-                int fromAccountId = j;
-                int toAccountId = j++;
-                decimal transferAmount = j;
+                {
+                    // Replace with the actual account IDs and amount
+                    int fromAccountId = j;
+                    int toAccountId = j++;
+                    decimal transferAmount = j;
 
-                    
+
                     var sql = $"call testdbthread.public.transfer({j},{fromAccountId},{transferAmount},{j * 2});"; //"call proc2(" + j + ")";
-                                     
-                    var rowsAffected = dbContext.Database.ExecuteSqlRaw(sql);                              
+
+                    var rowsAffected = dbContext.Database.ExecuteSqlRaw(sql);
+                }
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine(ex.Message);
                 }
             }
         }
